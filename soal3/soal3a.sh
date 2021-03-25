@@ -20,9 +20,7 @@ do
     if [[ $i -lt 9 ]]
     then
         mv "${img_array[$i]}" "Koleksi_0$((i+1)).jpg"
-        echo "${img_array[$i]}" 
     else
         mv "${img_array[$i]}" "Koleksi_$((i+1)).jpg"
     fi
-    echo $i
 done
