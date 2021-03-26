@@ -8,14 +8,29 @@ download_move_data(){
         wget --trust-server-names -a "Foto.log" $1
     done
 
-    img_array_duplicate=($(ls *.jpg.*))
     img_array=($(ls *.jpg))
+    img_array_duplicate=($(ls *.jpg.*))
 
     for i in "${img_array_duplicate[@]}"
     do
         rm $i
     done
 
+    for i in "${!img_array[@]}"
+    do
+        for j in "${!img_array[@]}"
+        do
+            if [[ $i -ne $j ]]
+            then
+                if cmp -s "${img_array[$i]}" "${img_array[$j]}"
+                then
+                    rm ${img_array[$i]}
+                fi
+            fi
+        done
+    done
+
+    img_array=($(ls *.jpg))
     for i in "${!img_array[@]}"
     do
         if [[ $i -lt 9 ]]
@@ -31,7 +46,7 @@ download_move_data(){
 
     mkdir "$foldername"
     mv "Foto.log" "$foldername/Foto.log"
-
+    
     for i in "${!img_array[@]}"
     do
         mv "${img_array[$i]}" "$foldername/${img_array[$i]}"

@@ -1,16 +1,22 @@
-datediff() {
-    d1=$(date -d "now" +%s)
-    d2=$(date -d "Mar 26 2021" +%s)
-    echo $(( (d1 - d2) / 86400 ))
+counter_ls() {
+    d_kelinci=$(ls -d Kelinci_* | wc -l)
+    d_kucing=$(ls -d Kucing_* | wc -l)
+    
+    if [[ $d_kucing -lt $d_kelinci ]]
+    then
+        echo 1
+    else
+        echo 0
+    fi
 }
-diff="$(datediff)"
-echo $diff
+kucing="$(counter_ls)"
+# echo $kucing
 
-url_kucing="https://loremflickr.com/320/240/kitten"
-url_kelinci="https://loremflickr.com/320/240/bunny"
+URL_KUCING="https://loremflickr.com/320/240/kitten"
+URL_KELINCI="https://loremflickr.com/320/240/bunny"
 
-foldername_kucing="Kucing_"
-foldername_kelinci="Kelinci_"
+FOLDERNAME_KUCING="Kucing_"
+FOLDERNAME_KELINCI="Kelinci_"
 
 foldername_generate(){
     local str=($(date "+%d-%m-%Y"))
@@ -34,14 +40,29 @@ download_move_data(){
         wget --trust-server-names -a "Foto.log" "$1"
     done
 
-    img_array_duplicate=($(ls *.jpg.*))
     img_array=($(ls *.jpg))
+    img_array_duplicate=($(ls *.jpg.*))
 
     for i in "${img_array_duplicate[@]}"
     do
         rm $i
     done
 
+    for i in "${!img_array[@]}"
+    do
+        for j in "${!img_array[@]}"
+        do
+            if [[ $i -ne $j ]]
+            then
+                if cmp -s "${img_array[$i]}" "${img_array[$j]}"
+                then
+                    rm ${img_array[$i]}
+                fi
+            fi
+        done
+    done
+
+    img_array=($(ls *.jpg))
     for i in "${!img_array[@]}"
     do
         if [[ $i -lt 9 ]]
@@ -56,10 +77,10 @@ download_move_data(){
     collected_data $foldername
 }
 
-if [[ $(( $diff % 2 )) -eq 0 ]]
+if [[ $kucing -eq 1 ]]
 then
-    download_move_data $url_kucing $foldername_kucing
+    download_move_data $URL_KUCING $FOLDERNAME_KUCING
 else
-    download_move_data $url_kelinci $foldername_kelinci
+    download_move_data $URL_KELINCI $FOLDERNAME_KELINCI
 fi
 
