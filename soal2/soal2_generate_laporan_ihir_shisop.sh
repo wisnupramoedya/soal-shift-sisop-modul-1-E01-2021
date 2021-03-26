@@ -6,7 +6,9 @@ awk -F '\t' 'BEGIN{max_profit=0; id=0}
 	if(NR>1 && profit>=max_profit) {max_profit=profit; id=$1} 
 } END{printf "Transaksi terakhir dengan profit percentage terbesar yaitu ID %d dengan persentase %.2f%%\n", id, max_profit}' Laporan-TokoShiSop.tsv > hasil.txt
 
-awk -F '\t' 'BEGIN{print "\nDaftar nama customer di Albuquerque pada tahun 2017 antara lain:"} $3 ~ /..-..-17/ {if(NR>1 && $10=="Albuquerque") print $7}' Laporan-TokoShiSop.tsv >> hasil.txt
+awk -F '\t' 'BEGIN{print "\nDaftar nama customer di Albuquerque pada tahun 2017 antara lain:"} 
+$3 ~ /..-..-17/ {if(NR>1 && $10=="Albuquerque") a[$7]++}
+END{for(b in a) print b}' Laporan-TokoShiSop.tsv >> hasil.txt
 
 awk -F '\t' 'BEGIN{segment[0]=0; segment[1]=0; segment[2]=0; min=10000; seg=0; name="string"} 
 {if(NR!=1)
