@@ -271,7 +271,7 @@ printf "\nTipe segmen customer yang penjualannya paling sedikit adalah %s dengan
 Laporan-TokoShiSop.tsv >> hasil.txt
 ```
 
-## 2.d
+### 2.d
 Untuk menghitung total profit dari setiap **region** dan menampilkan jumlahnya maka pertama-tama dapat dilakukan inisialisasi :
 ```
 awk -F '\t' 'BEGIN
@@ -522,3 +522,7 @@ Sehingga, dengan tidak lupa menambahkan `;` pada akhiran bash line serta menguba
 Catatan:
 1. Fungsi pertama `* 0-6,18-23 * * 1-5` berfungsi pada hari kuliah. Yakni diunzip saat hari Senin sampai Jumat pada pukul 0 hingga 7 (cukup dibikin 6 karena setiap menit dari 6:00 hingga 6:59) serta 18 sampai 24 pada setiap menitnya.
 2. Fungsi kedua `* * * * 0,6` berfungsi saat hari libur yakni pada Minggu dan Sabtu di mana dijalankan setiap saat.
+
+## Kendala
+- Regex harus cari-cari sendiri, tidak ada di modul
+- Penggunaan crontab ternyata terbatas pada beberapa sifat khusus seperti `%`
