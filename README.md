@@ -1,6 +1,146 @@
 # soal-shift-sisop-modul-1-E01-2021
 Sebagai tugas pengerjaan modul 1 SISOP E 2021.
 
+## Soal No.1
+Ryujin baru saja diterima sebagai IT support di perusahaan Bukapedia. Dia diberikan tugas untuk membuat laporan harian untuk aplikasi internal perusahaan, ticky. Terdapat 2 laporan yang harus dia buat, yaitu laporan daftar peringkat pesan error terbanyak yang dibuat oleh ticky dan laporan penggunaan user pada aplikasi ticky. Untuk membuat laporan tersebut, Ryujin harus melakukan beberapa hal berikut:
+### 1.a
+Mengumpulkan informasi dari log aplikasi yang terdapat pada file syslog.log. Informasi yang diperlukan antara lain: jenis log (ERROR/INFO), pesan log, dan username pada setiap baris lognya. Karena Ryujin merasa kesulitan jika harus memeriksa satu per satu baris secara manual, dia menggunakan regex untuk mempermudah pekerjaannya. Bantulah Ryujin membuat regex tersebut.
+### 1.b
+Kemudian, Ryujin harus menampilkan semua pesan error yang muncul beserta jumlah kemunculannya.
+### 1.c
+Ryujin juga harus dapat menampilkan jumlah kemunculan log ERROR dan INFO untuk setiap user-nya.
+
+***Setelah semua informasi yang diperlukan telah disiapkan, kini saatnya Ryujin menuliskan semua informasi tersebut ke dalam laporan dengan format file csv.***
+
+### 1.d
+Semua informasi yang didapatkan pada poin b dituliskan ke dalam file error_message.csv dengan header Error,Count yang kemudian diikuti oleh daftar pesan error dan jumlah kemunculannya diurutkan berdasarkan jumlah kemunculan pesan error dari yang terbanyak.
+Contoh:
+```
+Error,Count
+Permission denied,5
+File not found,3
+Failed to connect to DB,2
+```
+
+
+### 1.e
+Semua informasi yang didapatkan pada poin c dituliskan ke dalam file user_statistic.csv dengan header Username,INFO,ERROR diurutkan berdasarkan username secara ascending.
+Contoh:
+```
+Username,INFO,ERROR
+kaori02,6,0
+kousei01,2,2
+ryujin.1203,1,3
+```
+**Catatan :**
+- Setiap baris pada file syslog.log mengikuti pola berikut:
+ <time> <hostname> <app_name>: <log_type> <log_message> (<username>)
+- Tidak boleh menggunakan AWK
+
+## Penyelesaian No.1
+
+### 1.a
+Untuk mengumpulkan nformasi yang diperlukan antara lain: jenis log (ERROR/INFO), pesan log, dan username pada setiap baris log, maka digunakan `grep "ticky" syslog.log | cut -d ':' -f 4-` dimana kita menggunakan `grep` dan `cut` dengan delimiter `":"` lalu memilih field `4-` yang artinya field ke 4 dan seterusnya.
+```
+grep "ticky" syslog.log | cut -d ':' -f 4-
+```
+
+### 1.b
+Pertama, kita assign variabel `perma` untuk menyimpan pesan-pesan error dengan `grep "ERROR" syslog.log | cut -d ' ' -f 7- | rev | cut -d ' ' -f 2- | rev | tr ' ' '*'` yang menggunakan `cut` seperti soal 1.a, lalu `rev` untuk mereverse sebuah baris, setelahnya digunakan `tr` untuk mengubah spasi per baris menjadi "*" (asterisk).
+```
+perma=""
+permafix=""
+
+for masalah in `grep "ERROR" syslog.log | cut -d ' ' -f 7- | rev | cut -d ' ' -f 2- | rev | tr ' ' '*'`
+do
+if [[ "$perma" != *"$masalah"* ]]
+then
+    perma+="${masalah} "
+fi
+done
+```
+
+Lalu akan dihapus duplikat dengan mensortir `perma` dengan isi dari syslog.log, hasil dari penghapusan ini di assign ke variabel baru `permafix` menggunakan `for in` sambil menghitung jumlah errornya yang diassign nilainya ke variabel `count`. 
+```
+for tes in `echo "$perma" | tr ' ' '\n'`
+do
+
+count=0
+
+for typ in `grep "ERROR" syslog.log | cut -d ' ' -f 7- | rev | cut -d ' ' -f 2- | rev | tr ' ' '*' | tr ' ' '\n'`
+do
+
+if [ "$typ" = "$tes" ]
+then
+count=$((count+1))
+fi
+
+done
+
+permafix+="$count#$tes,$count "
+done
+```
+### 1.c
+Untuk mengambil nama user, kami menggunakan `grep` dengan option `o` atau only. Regex untuk mencarinya digunakan `\(\w+\.?\w+?\)` karena letak username selalu diantara kurung awal dan buka ( `"("` dan `")"` ). lalu hasilnya diassign ke variabel `user`
+```
+for entry in `grep -oP "\(\w+\.?\w+?\)" syslog.log | cut -c2- | rev | cut -c2- | rev`
+do
+if [[ "$user" != *"$entry"* ]]
+then
+    user+="${entry} "
+fi
+done
+```
+
+Lalu, akan dihitung jumlah error dan info setiap usernya. Digunakan ***nested loop***, menyocokkan antara nama-nama user dengan `error` atau `info` yang dilakukan masing-masing user yang terdapat di `syslog.log`. Hasil tidak disimpan melainkan langsung ditampilkan. 
+
+```
+for pengguna in `echo "$user" | tr ' ' '\n' | sort`
+do
+
+erro=0
+inf=0
+
+for type in `grep -w "$pengguna" syslog.log`
+do
+
+if [ "$type" = "ERROR" ]
+then
+erro=$((erro+1))
+elif [ "$type" = "INFO" ]
+then
+inf=$((inf+1))
+fi
+
+done
+```
+### 1.d
+Lanjutan dari no `1.b`, Variabel `permafix` di `sort` secara descending. Sambil menyimpan `Error` beserta `Count`nya ke `error_message.csv`
+```
+echo "Error,Count" > error_message.csv
+echo $permafix | tr ' ' '\n' | sort -V -r | cut -d '#' -f 2- | tr '*' ' ' >> error_message.csv
+```
+### 1.e
+Lanjutan dari no `1.c`, karena ***nested loop*** belum selesai. Selanjutnya ditampilkan hasilnya ke `user_statistic.csv`
+
+```
+echo 'Username,INFO,ERROR' > user_statistic.csv
+for
+.			#
+.			#	for 
+.			#	pada
+for			#	no
+.			#	1.c
+.			#
+.			#
+done
+.
+echo $pengguna,$inf,$erro >> user_statistic.csv
+done
+```
+
+
+
 ## Soal No.2
 Steven dan Manis mendirikan sebuah startup bernama “TokoShiSop”. Sedangkan kamu
 dan Clemong adalah karyawan pertama dari TokoShiSop. Setelah tiga tahun bekerja,
@@ -176,15 +316,15 @@ Agar hasil dari laporan yang diminta mudah dibaca maka semua script dari poin **
 
 ## Soal No.3
 Kuuhaku adalah orang yang sangat suka mengoleksi foto-foto digital, namun Kuuhaku juga merupakan seorang yang pemalas sehingga ia tidak ingin repot-repot mencari foto, selain itu ia juga seorang pemalu, sehingga ia tidak ingin ada orang yang melihat koleksinya tersebut, sayangnya ia memiliki teman bernama Steven yang memiliki rasa kepo yang luar biasa. Kuuhaku pun memiliki ide agar Steven tidak bisa melihat koleksinya, serta untuk mempermudah hidupnya, yaitu dengan meminta bantuan kalian. Idenya adalah :
-### 2.a
+### 3.a
 Membuat script untuk **mengunduh** 23 gambar dari "https://loremflickr.com/320/240/kitten" serta **menyimpan** log-nya ke file "Foto.log". Karena gambar yang diunduh acak, ada kemungkinan gambar yang sama terunduh lebih dari sekali, oleh karena itu kalian harus **menghapus** gambar yang sama (tidak perlu mengunduh gambar lagi untuk menggantinya). Kemudian **menyimpan** gambar-gambar tersebut dengan nama "Koleksi_XX" dengan nomor yang berurutan **tanpa ada nomor yang hilang** (contoh : Koleksi_01, Koleksi_02, ...)
-### 2.b
+### 3.b
 Karena Kuuhaku malas untuk menjalankan script tersebut secara manual, ia juga meminta kalian untuk menjalankan script tersebut **sehari sekali pada jam 8 malam** untuk tanggal-tanggal tertentu setiap bulan, yaitu dari **tanggal 1 tujuh hari sekali** (1,8,...), serta dari **tanggal 2 empat hari sekali** (2,6,...). Supaya lebih rapi, gambar yang telah diunduh beserta **log-nya, dipindahkan ke folder** dengan nama **tanggal unduhnya** dengan **format** "DD-MM-YYYY" (contoh : "13-03-2023").
-### 2.c
+### 3.c
 Agar kuuhaku tidak bosan dengan gambar anak kucing, ia juga memintamu untuk **mengunduh** gambar kelinci dari "https://loremflickr.com/320/240/bunny". Kuuhaku memintamu mengunduh gambar kucing dan kelinci secara **bergantian** (yang pertama bebas. contoh : tanggal 30 kucing > tanggal 31 kelinci > tanggal 1 kucing > ... ). Untuk membedakan folder yang berisi gambar kucing dan gambar kelinci, **nama folder diberi awalan** "Kucing_" atau "Kelinci_" (contoh : "Kucing_13-03-2023").
-### 2.d
+### 3.d
 Untuk mengamankan koleksi Foto dari Steven, Kuuhaku memintamu untuk membuat script yang akan **memindahkan seluruh folder ke zip** yang diberi nama “Koleksi.zip” dan **mengunci** zip tersebut dengan **password** berupa tanggal saat ini dengan format "MMDDYYYY" (contoh : “03032003”).
-### 2.e
+### 3.e
 Karena kuuhaku hanya bertemu Steven pada saat kuliah saja, yaitu setiap hari kecuali sabtu dan minggu, dari jam 7 pagi sampai 6 sore, ia memintamu untuk membuat koleksinya **ter-zip** saat kuliah saja, selain dari waktu yang disebutkan, ia ingin koleksinya **ter-unzip** dan **tidak ada file zip** sama sekali.
 
 **Catatan :**
