@@ -69,7 +69,8 @@ Pada setiap baris kecuali baris pertama akan dihitung jumlah persentase profitny
 Lalu pada akhirnya diberikan rule ```END``` dan hasil dari outputnya dimasukkan ke dalam ```hasil.txt``` :
 ```
 END{
-	printf "Transaksi terakhir dengan profit percentage terbesar yaitu ID %d dengan persentase %.2f%%\n", id, max_profit}' Laporan-TokoShiSop.tsv > hasil.txt
+	printf "Transaksi terakhir dengan profit percentage terbesar yaitu ID %d dengan persentase %.2f%%\n", id, max_profit
+	}' Laporan-TokoShiSop.tsv > hasil.txt
 ```
 Digunakan operator redirect ```>``` yang berguna untuk membuat file baru ketika file belum ada atau menimpa isi dari file ketika filenya sudah ada.
 
@@ -102,7 +103,11 @@ setiap **segment** diinisialisasikan sebagai array ```segment[]``` dimana masing
 Setiap baris akan dicek pada field ke-8 yang berisikan record dari **segment** dan kemudian jumlah segment-segment tersebut akan bertambah setiap kali ditemukan. Dengan menggunakan :
 ```
 if(NR!=1)
-	{if($8 == "Consumer") segment[0]+=1; if($8 == "Corporate") segment[1]+=1; if($8 == "Home Office") segment[2]+=1;}
+	{
+	if($8 == "Consumer") segment[0]+=1; 
+	if($8 == "Corporate") segment[1]+=1; 
+	if($8 == "Home Office") segment[2]+=1;
+	}
 ```
 
 Kemudian jumlah yang telah didapatkan dari setiap **segment** akan dibandingkan untuk mencari segment mana yang jumlahnya paling sedikit :
@@ -120,9 +125,10 @@ if(seg==1) name="Corporate";
 if(seg==2) name="Home Office"; 
 ```
 
-Pada akhirnya dioutputkan hasilnya dan ditambahkan ke dalam file ```hasil.txt`` sesuai dari permintaan soal
+Pada akhirnya dioutputkan hasilnya dan ditambahkan ke dalam file ```hasil.txt``` sesuai dari permintaan soal
 ```
-printf "\nTipe segmen customer yang penjualannya paling sedikit adalah %s dengan %d transaksi\n", name,min}' Laporan-TokoShiSop.tsv >> hasil.txt
+printf "\nTipe segmen customer yang penjualannya paling sedikit adalah %s dengan %d transaksi\n", name,min}' 
+Laporan-TokoShiSop.tsv >> hasil.txt
 ```
 
 ## 2.d
@@ -136,7 +142,10 @@ setiap **region** diinisialisasikan sebagai array ```region[]``` dimana masing-m
 Setiap baris akan dicek pada field ke-13 yang berisikan record dari **region** dan kemudian isi dari arraynya akan terus ditambah sebesar nilai profit yang ada pada field ke-21. Dengan menggunakan :
 ```
 NR>1{
-	if($13 == "Central") region[0]+=$21; if($13 == "East") region[1]+=$21; if($13 == "South") region[2]+=$21; if($13 == "West") region[3]+=$21;
+	if($13 == "Central") region[0]+=$21; 
+	if($13 == "East") region[1]+=$21; 
+	if($13 == "South") region[2]+=$21; 
+	if($13 == "West") region[3]+=$21;
 } 
 ```
 
@@ -156,9 +165,10 @@ if(reg==2) name="South";
 if(reg==3) name="West";
 ```
 
-Pada akhirnya dioutputkan hasilnya dan ditambahkan ke dalam file ```hasil.txt`` sesuai dari permintaan soal
+Pada akhirnya dioutputkan hasilnya dan ditambahkan ke dalam file ```hasil.txt``` sesuai dari permintaan soal
 ```
-printf "\nWilayah bagian (region) yang memiliki total keuntungan (profit) yang paling sedikit adalah %s dengan total keuntungan %.4f\n", name, min_profit}' Laporan-TokoShiSop.tsv >> hasil.txt
+printf "\nWilayah bagian (region) yang memiliki total keuntungan (profit) yang paling sedikit adalah %s dengan total keuntungan %.4f\n", name, min_profit}' 
+Laporan-TokoShiSop.tsv >> hasil.txt
 ```
 
 ## 2.e
