@@ -10,7 +10,6 @@ counter_ls() {
     fi
 }
 kucing="$(counter_ls)"
-# echo $kucing
 
 URL_KUCING="https://loremflickr.com/320/240/kitten"
 URL_KELINCI="https://loremflickr.com/320/240/bunny"
@@ -25,8 +24,6 @@ foldername_generate(){
 
 collected_data(){
     img_array=($(ls *.jpg))
-    
-    mkdir "$1"
     mv "Foto.log" "$1/Foto.log"
     for i in "${!img_array[@]}"
     do
@@ -74,6 +71,7 @@ download_move_data(){
     done
 
     foldername=$(foldername_generate $2)
+    mkdir "$foldername"
     collected_data $foldername
 }
 

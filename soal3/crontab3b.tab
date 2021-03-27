@@ -16,7 +16,7 @@
 # 
 # For example, you can run a backup of all your user accounts
 # at 5 a.m every week with:
-0 20 1-31/7,2-31/4 * * cd /home/wisnupramoedya/Programming/Bash/modul-1/soal-shift-sisop-modul-1-E01-2021/soal3 && bash soal3b.sh >/dev/null 2>&1
+0 20 1-31/7,2-31/4 * * cd /home/wisnupramoedya/Programming/Bash/modul-1/soal-shift-sisop-modul-1-E01-2021/soal3 && bash soal3b.sh
 # 
 # For more information see the manual pages of crontab(5) and cron(8)
 # 
