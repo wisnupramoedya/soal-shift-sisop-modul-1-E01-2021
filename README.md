@@ -173,3 +173,212 @@ Laporan-TokoShiSop.tsv >> hasil.txt
 
 ## 2.e
 Agar hasil dari laporan yang diminta mudah dibaca maka semua script dari poin **2.a** hingga **2.d** dijadikan satu di dalam file dengan format nama ```soal2_generate_laporan_ihir_shisop.sh```
+
+## Soal No.3
+Kuuhaku adalah orang yang sangat suka mengoleksi foto-foto digital, namun Kuuhaku juga merupakan seorang yang pemalas sehingga ia tidak ingin repot-repot mencari foto, selain itu ia juga seorang pemalu, sehingga ia tidak ingin ada orang yang melihat koleksinya tersebut, sayangnya ia memiliki teman bernama Steven yang memiliki rasa kepo yang luar biasa. Kuuhaku pun memiliki ide agar Steven tidak bisa melihat koleksinya, serta untuk mempermudah hidupnya, yaitu dengan meminta bantuan kalian. Idenya adalah :
+### 2.a
+Membuat script untuk **mengunduh** 23 gambar dari "https://loremflickr.com/320/240/kitten" serta **menyimpan** log-nya ke file "Foto.log". Karena gambar yang diunduh acak, ada kemungkinan gambar yang sama terunduh lebih dari sekali, oleh karena itu kalian harus **menghapus** gambar yang sama (tidak perlu mengunduh gambar lagi untuk menggantinya). Kemudian **menyimpan** gambar-gambar tersebut dengan nama "Koleksi_XX" dengan nomor yang berurutan **tanpa ada nomor yang hilang** (contoh : Koleksi_01, Koleksi_02, ...)
+### 2.b
+Karena Kuuhaku malas untuk menjalankan script tersebut secara manual, ia juga meminta kalian untuk menjalankan script tersebut **sehari sekali pada jam 8 malam** untuk tanggal-tanggal tertentu setiap bulan, yaitu dari **tanggal 1 tujuh hari sekali** (1,8,...), serta dari **tanggal 2 empat hari sekali** (2,6,...). Supaya lebih rapi, gambar yang telah diunduh beserta **log-nya, dipindahkan ke folder** dengan nama **tanggal unduhnya** dengan **format** "DD-MM-YYYY" (contoh : "13-03-2023").
+### 2.c
+Agar kuuhaku tidak bosan dengan gambar anak kucing, ia juga memintamu untuk **mengunduh** gambar kelinci dari "https://loremflickr.com/320/240/bunny". Kuuhaku memintamu mengunduh gambar kucing dan kelinci secara **bergantian** (yang pertama bebas. contoh : tanggal 30 kucing > tanggal 31 kelinci > tanggal 1 kucing > ... ). Untuk membedakan folder yang berisi gambar kucing dan gambar kelinci, **nama folder diberi awalan** "Kucing_" atau "Kelinci_" (contoh : "Kucing_13-03-2023").
+### 2.d
+Untuk mengamankan koleksi Foto dari Steven, Kuuhaku memintamu untuk membuat script yang akan **memindahkan seluruh folder ke zip** yang diberi nama “Koleksi.zip” dan **mengunci** zip tersebut dengan **password** berupa tanggal saat ini dengan format "MMDDYYYY" (contoh : “03032003”).
+### 2.e
+Karena kuuhaku hanya bertemu Steven pada saat kuliah saja, yaitu setiap hari kecuali sabtu dan minggu, dari jam 7 pagi sampai 6 sore, ia memintamu untuk membuat koleksinya **ter-zip** saat kuliah saja, selain dari waktu yang disebutkan, ia ingin koleksinya **ter-unzip** dan **tidak ada file zip** sama sekali.
+
+**Catatan :**
+- Gunakan bash, AWK, dan command pendukung
+- Tuliskan semua cron yang kalian pakai ke file cron3[b/e].tab yang sesuai
+
+
+## Penyelesaian No.3 :
+### 3.a
+Pada mulanya, dengan memakai command `wget`, gambar diambil dengan nama menggunakan nama yang terpasang di server atau memakai `--trust-server-names`. Hal ini dilakukan dengan perulangan `for` sebanyak 23 kali. Tidak lupa untuk membuat `Foto.log` dengan menambahkan `-a` pada wget agar melakukan append isi ke log.
+```
+for i in {1..23}
+do
+	wget --trust-server-names -a "Foto.log" $1
+done
+```
+Note: `$1` dikarenakan nantinya akan diaplikasikan kepada fungsi tersendiri yang memberikan isian pada `$1` berupa url.
+
+Setelahnya dilakukan pembagian gambar, antara gambar yang ternyata duplikat berdasarkan dari server maupun gambar aslinya. Gambar duplikat dari server biasanya akan otomatis memiliki format `*.jpg.x` dengan x berupa angka.
+```
+img_array=($(ls *.jpg))
+img_array_duplicate=($(ls *.jpg.*))
+```
+
+Perlakuan lantas dibagi dua. Apabila gambar berasal dari duplikat yang terdeteksi maka dilakukan penghapusan pada `img_array_duplicate`.
+```
+for i in "${img_array_duplicate[@]}"
+do
+	rm $i
+done
+```
+
+Apabila di dalam gambar dengan format `*.jpg` ternyata masih ada yang sama, maka dilakukan `cmp` terhadap kedua gambar.
+```
+for i in "${!img_array[@]}"
+do
+	for j in "${!img_array[@]}"
+	do
+		if [[ $i -ne $j ]]
+		then
+			if cmp -s "${img_array[$i]}" "${img_array[$j]}"
+			then
+				rm ${img_array[$i]}
+			fi
+		fi
+	done
+done
+```
+
+Lakukan kembali, pencarian gambar pasca dihapus yang selanjutnya dilakukan pergantian nama sesuai angkanya apakah di bawah 9 atau tidak. Dipakailah command mv.
+```
+img_array=($(ls *.jpg))
+for i in "${!img_array[@]}"
+do
+	if [[ $i -lt 9 ]]
+	then
+		mv "${img_array[$i]}" "Koleksi_0$((i+1)).jpg"
+	else
+		mv "${img_array[$i]}" "Koleksi_$((i+1)).jpg"
+	fi
+done
+```
+
+Pada praktik di sini, seluruh cara tersebut dijadikan satu dalam sebuah fungsi dengan nama `download_move_data` dengan mengambil satu argumen url link. Hal ini hanya untuk memudahkan *debugging*.
+
+### 3.b
+Pada tahap ini, semua langkah hampir sama dengan proses pada 3.a. Namun, dilakukan perubahan pada line akhir dari fungsi. Karena terdapat formatting nama yang berdasarkan `date` dengan bentuk "DD-MM-YY". Lantas, hasil date tersebut dibuatkan directory baru dengan `mkdir`.
+```
+foldername=($(date "+%d-%m-%Y"))
+mkdir "$foldername"
+```
+
+Lantas, kita memasukkan seluruh gambar dan `Foto.log` ke folder tersebut. Program ini dimasukkan ke fungsi `collected_data` dengan argumen 1 adalah `$foldername`.
+```
+collected_data(){
+    img_array=($(ls *.jpg))
+    mv "Foto.log" "$1/Foto.log"
+    for i in "${!img_array[@]}"
+    do
+        mv "${img_array[$i]}" "$1/${img_array[$i]}"
+    done
+}
+```
+Lantas, tinggal memanggil `collected_data $foldername`.
+
+Jika sudah selesai dibuat, dilakukan pembuatan cron job dengan menekan `crontab -e` pada terminal dan menambahkan isian berikut.
+```
+0 20 1-31/7,2-31/4 * * cd /home/wisnupramoedya/Programming/Bash/modul-1/soal-shift-sisop-modul-1-E01-2021/soal3 && bash soal3b.sh
+```
+Catatan:
+- Pengaturan `0 20 1-31/7,2-31/4 * *` ini berarti terbatas pada jam 20:00 dengan dijalankan pada tanggal 1-31 untuk tujuh hari sekali dan 2-31 untuk empat hari sekali.
+- Command cd dst hanya menunjukkan untuk mengarahkan directory ke tempat file.
+
+### 3.c
+Untuk tahap ini, karena sebelumnya sudah dibuatkan fungsi. Mulanya kita cukup mendefinisikan constant kita.
+```
+URL_KUCING="https://loremflickr.com/320/240/kitten"
+URL_KELINCI="https://loremflickr.com/320/240/bunny"
+
+FOLDERNAME_KUCING="Kucing_"
+FOLDERNAME_KELINCI="Kelinci_"
+```
+
+Untuk menentukan url atau hewan apa yang harus dilakukan pendownloadan, dibuatkan pendeteksi jumlah folder `Kucing_*` dan `Kelinci_*` dengan `ls -d jenis_folder_* | wc -l`. `ls` untuk menyebutkan seluruh file, sedangkan `wc` untuk menghitung banyak list. Yang selanjutnya, dilakukan pemilihan, jika jumlah folder kucing apakah kurang dari kelinci. Hal ini bermaksud untuk asumsi untuk selalu bergantian jika dijalankan. Ke seluruh perjalanan tersebut dimasukkan ke fungsi `counter_ls`.
+```
+counter_ls() {
+    d_kelinci=$(ls -d Kelinci_* | wc -l)
+    d_kucing=$(ls -d Kucing_* | wc -l)
+    
+    if [[ $d_kucing -lt $d_kelinci ]]
+    then
+        echo 1
+    else
+        echo 0
+    fi
+}
+kucing="$(counter_ls)"
+```
+
+Selanjutnya, cek counter `kucing` yang telah dibuat apakah sekarang saatnya mendownload kucing atau kelinci.
+```
+if [[ $kucing -eq 1 ]]
+then
+    download_move_data $URL_KUCING $FOLDERNAME_KUCING
+else
+    download_move_data $URL_KELINCI $FOLDERNAME_KELINCI
+fi
+```
+
+Cara yang dipakai pada tahap ini hampir sama dengan soal 3.c, namun perbedaannya adalah berikut.
+1. Fungsi download_move_data mengambil dua argumen. Yang pertama adalah url sumber. Yang kedua adalah jenis folder. Berikut contohnya.
+```
+download_move_data $URL_KELINCI $FOLDERNAME_KELINCI
+```
+2. Nama folder dibuatkan sebuah fungsi baru.
+Fungsi ini akan mencoba untuk mengambil date dengan format DD-MM-YY. Lantas, string date yang sudah dibuat digabungkan dengan jenis_folder. Argumen yang diambil fungsi ini adalah jenis folder. Sehingga, jika dijalankan seperti ini `foldername=$(foldername_generate $2)`. Namun bentukan fungsi adalah berikut.
+```
+foldername_generate(){
+    local str=($(date "+%d-%m-%Y"))
+    echo "$1$str"
+}
+```
+Setelahnya, keseluruhan bentukannya sama yakni memasukkan file ke foldername yang telah dibuat sebagaimana soal 3.b.
+
+### 3.d
+Pada tahap ini, dilakukan pengecekan terhadap banyak jumlah folder `Kelinci_*` dan `Kucing_*`. Di sini digunakan `ls -d Kelinci_* Kucing_*` yang selanjutnya dilakukan pipe ke `awk 'END {print NR}'`.
+
+Hasil yang didapat dari awk lantas dijadikan acuan ke dalam if else. Di dalam if else, mulanya dibuatkan format password dengan bentuk MMDDYY. Pembuatan password dengan `date` adalah berikut.
+```
+PASSWORD=($(date "+%m%d%Y"))
+```
+Dari password yang sudah dibuat, dimasukkanlah ke dalam command `zip` dengan argumen yang dimasukkan seperti `-p` (setelahnya dimasukkan `$PASSWORD`) serta `-r` agar rekursif ke dalam setiap subfolder (setelahnya dimasukkan tiga argumen, yakni Koleksi.zip, `Kucing_*`, dan `Kelinci_*`). Setelahnya, kita lakukan delete terhadap seluruh folder `Kucing_*` dan `Kelinci_*` dengan `rm` sebagai berikut.
+```
+PASSWORD=($(date "+%m%d%Y"))
+zip -P $PASSWORD -r Koleksi.zip Kucing_* Kelinci_* && rm -r Kucing_* Kelinci_*
+```
+
+Secara keseluruhan hasil dari soal3d.sh adalah berikut.
+```
+if [[ ($(ls -d Kelinci_* Kucing_* | awk 'END {print NR}')) ]];
+then
+    PASSWORD=($(date "+%m%d%Y"))
+    zip -P $PASSWORD -r Koleksi.zip Kucing_* Kelinci_* && rm -r Kucing_* Kelinci_*
+fi
+```
+
+### 3.e
+Untuk membatasi file dalam keadaan zip hanya saat kuliah. Maka kita menjalankan script `soal3d.sh` pada crontab sebagai berikut.
+```
+* 7-18 * * 1-5 cd /home/wisnupramoedya/Programming/Bash/modul-1/soal-shift-sisop-modul-1-E01-2021/soal3 && bash soal3d.sh
+```
+Catatan:
+- \* 7-18 * * 1-5 berarti menjalankan pada hari Senin hingga Jumat pada pukul 7 pagi hingga 6 sore setiap menit (asumsi jika laptop tidak dinyalakan setiap hari maka perlu setiap menit)
+
+Sedangkan untuk mengunzip file di luar kuliah maka dibutuhkan fungsi khusus di dalam crontab.
+
+Karena zip terpassword dengan format MMDDYY, maka perlu dicari nilai kapan zip tersebut dibuat. Di sini, dapat dipakai command `stat` untuk mendapatkan kapan Koleksi.zip terakhir diedit dengan `"%y"` (karena pembuatan sudah pasti sama dengan terakhir diedit sebab tidak mungkin zip di tengah-tengah). Sehingga, scriptnya dengan mencoba memasukkan ke variabel `modif_date` sebagai berikut.
+```
+modif_date=$(stat --format="%y" Koleksi.zip)
+```
+Setelahnya, dilakukan passing `$modif_date` ke command `date` agar didapatkan format MMDDYY.
+```
+pass_date=$(date -d "$modif_date" "+%m%d%Y")
+```
+Dari password yang sudah dibuat, dimasukkanlah ke dalam command `unzip` dengan argumen yang dimasukkan seperti `-p` (setelahnya dimasukkan `$pass_date`) serta nama zip `Koleksi.zip`. Setelah selesai di-unzip, kita lakukan delete terhadap zip `Koleksi.zip` dengan `rm` sebagai berikut.
+```
+unzip -P $pass_date Koleksi.zip; rm Koleksi.zip;
+```
+
+Sehingga, dengan tidak lupa menambahkan `;` pada akhiran bash line serta mengubah `%` menjadi `\%`, pada crontab menjadi berikut.
+```
+* 0-6,18-23 * * 1-5 cd /home/wisnupramoedya/Programming/Bash/modul-1/soal-shift-sisop-modul-1-E01-2021/soal3 && modif_date=$(stat --format="\%y" Koleksi.zip); pass_date=$(date -d "$modif_date" "+\%m\%d\%Y"); unzip -P $pass_date Koleksi.zip; rm Koleksi.zip;
+* * * * 0,6 cd /home/wisnupramoedya/Programming/Bash/modul-1/soal-shift-sisop-modul-1-E01-2021/soal3 && modif_date=$(stat --format="\%y" Koleksi.zip); pass_date=$(date -d "$modif_date" "+\%m\%d\%Y"); unzip -P $pass_date Koleksi.zip; rm Koleksi.zip;
+```
+Catatan:
+1. Fungsi pertama `* 0-6,18-23 * * 1-5` berfungsi pada hari kuliah. Yakni diunzip saat hari Senin sampai Jumat pada pukul 0 hingga 7 (cukup dibikin 6 karena setiap menit dari 6:00 hingga 6:59) serta 18 sampai 24 pada setiap menitnya.
+2. Fungsi kedua `* * * * 0,6` berfungsi saat hari libur yakni pada Minggu dan Sabtu di mana dijalankan setiap saat.
